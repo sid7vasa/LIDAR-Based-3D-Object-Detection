@@ -5,6 +5,7 @@ __pycache__/
 
 # User defined
 playground/
+venv/
 
 # C extensions
 *.so
