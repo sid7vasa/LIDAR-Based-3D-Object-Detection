@@ -201,7 +201,7 @@ def prepare_training_data_for_scene(level5data, first_sample_token, output_folde
         
         sample_token = sample["next"]
 
-def bev_representation(config):
+def bev_data_creation(config):
     DATA_PATH = config['DATA_PATH']
     json_path = config['json_path']
     lyft_dataset = LyftDataset(DATA_PATH, json_path=json_path)
@@ -249,13 +249,12 @@ def bev_representation(config):
     # Homogeneous transformation matrix from sensor coordinate frame to ego car frame.
     car_from_sensor = transform_matrix(calibrated_sensor['translation'], Quaternion(calibrated_sensor['rotation']),
                                         inverse=False)
+    
+    # There is an error in one of the lidar data. so ignore the specific file.
     spec_lidar_path_1 = '/home/kishore/workspace/lidar_data/data/3d-object-detection-for-autonomous-vehicles/train_lidar/host-a011_lidar1_1233090652702363606.bin'
     if str(lidar_filepath) != spec_lidar_path_1:
         lidar_pointcloud = LidarPointCloud.from_file(lidar_filepath)
-    # else:
-    #     print("lidar_path:", str(lidar_filepath))
-    #     lidar_pointcloud = LidarPointCloud.from_file(lidar_filepath).reshape((-1, 4))[:, :4]
-    # lidar_pointcloud = LidarPointCloud.from_file(lidar_filepath)
+ 
 
     # The lidar pointcloud is defined in the sensor's reference frame.
     # We want it in the car's reference frame, so we transform each point
@@ -326,5 +325,4 @@ if __name__ == "__main__":
     config["z_offset"] = z_offset
     config["bev_shape"] = "./res"
 
-    
-    results_path = bev_representation(config)
+    bev_data_creation(config)
