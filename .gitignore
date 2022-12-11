@@ -6,6 +6,10 @@ __pycache__/
 # User defined
 playground/
 venv/
+images
+lidar
+maps
+notebooks/
 
 # C extensions
 *.so
