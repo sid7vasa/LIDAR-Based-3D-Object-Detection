@@ -42,7 +42,7 @@ from lyft_dataset_sdk.utils.geometry_utils import view_points, transform_matrix
 from pathlib import Path
 from lyft_dataset_sdk.utils.data_classes import LidarPointCloud, Box, Quaternion
 from lyft_dataset_sdk.utils.geometry_utils import view_points, transform_matrix
-from data.dataset import LyftDataset
+from data.dataset_object import LyftDataset
 
 import struct
 from abc import ABC, abstractmethod

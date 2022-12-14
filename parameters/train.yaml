@@ -1,1 +1,14 @@
-DATA_PATH: "/home/kishore/workspace/lidar_data/data/3d-object-detection-for-autonomous-vehicles/"
+# Kishore Defined
+# DATA_PATH: "/home/kishore/workspace/lidar_data/data/3d-object-detection-for-autonomous-vehicles/"
+
+
+# SID Defined
+DATA_PATH: "/mnt/e/LFS/3d-object-detection-for-autonomous-vehicles/bev_data/"
+PROJECT_DIR: "/home/sid/workspace/LIDAR-Based-3D-Object-Detection"
+
+dataset:
+    data_dir:
+        train: "/mnt/e/LFS/3d-object-detection-for-autonomous-vehicles/bev_data/train_bev/X/"
+        val: "/mnt/e/LFS/3d-object-detection-for-autonomous-vehicles/bev_data/val_bev/X/"
+    batch_size: 4
+visualize: true
