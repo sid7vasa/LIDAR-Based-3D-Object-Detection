@@ -88,7 +88,6 @@ def car_to_voxel_coords(points, shape, voxel_size, z_offset=0):
     return p
 
 def create_voxel_pointcloud(points, shape, voxel_size=(0.5,0.5,1), z_offset=0):
-
     points_voxel_coords = car_to_voxel_coords(points.copy(), shape, voxel_size, z_offset)
     points_voxel_coords = points_voxel_coords[:3].transpose(1,0)
     points_voxel_coords = np.int0(points_voxel_coords)
@@ -163,6 +162,22 @@ def prepare_training_data_for_scene(level5data, first_sample_token, output_folde
         lidar_data = level5data.get("sample_data", sample_lidar_token)
         lidar_filepath = level5data.get_sample_data_path(sample_lidar_token)
 
+        c1_filepath = level5data.get_sample_data_path(sample["data"]["CAM_FRONT"])
+        c2_filepath = level5data.get_sample_data_path(sample["data"]["CAM_FRONT_ZOOMED"])
+        c3_filepath = level5data.get_sample_data_path(sample["data"]["CAM_FRONT_RIGHT"])
+        c4_filepath = level5data.get_sample_data_path(sample["data"]["CAM_FRONT_LEFT"])
+        c5_filepath = level5data.get_sample_data_path(sample["data"]["CAM_BACK"])
+        c6_filepath = level5data.get_sample_data_path(sample["data"]["CAM_BACK_RIGHT"])
+        c7_filepath = level5data.get_sample_data_path(sample["data"]["CAM_BACK_LEFT"])
+        
+        c1 = np.array(Image.open(c1_filepath)).astype(np.uint8)
+        c2 = np.array(Image.open(c2_filepath)).astype(np.uint8) 
+        c3 = np.array(Image.open(c3_filepath)).astype(np.uint8) 
+        c4 = np.array(Image.open(c4_filepath)).astype(np.uint8) 
+        c5 = np.array(Image.open(c5_filepath)).astype(np.uint8) 
+        c6 = np.array(Image.open(c6_filepath)).astype(np.uint8) 
+        c7 = np.array(Image.open(c7_filepath)).astype(np.uint8) 
+        
         ego_pose = level5data.get("ego_pose", lidar_data["ego_pose_token"])
         calibrated_sensor = level5data.get("calibrated_sensor", lidar_data["calibrated_sensor_token"])
 
@@ -195,9 +210,17 @@ def prepare_training_data_for_scene(level5data, first_sample_token, output_folde
 
         bev_im = np.round(bev*255).astype(np.uint8)
         target_im = target[:,:,0] # take one channel only
+    
 
-        cv2.imwrite(os.path.join(output_folder, "{}_input.png".format(sample_token)), bev_im)
-        cv2.imwrite(os.path.join(output_folder, "{}_target.png".format(sample_token)), target_im)
+        # cv2.imwrite(os.path.join(output_folder, "{}_input.png".format(sample_token)), bev_im)
+        # cv2.imwrite(os.path.join(output_folder, "{}_target.png".format(sample_token)), target_im)
+        cv2.imwrite(os.path.join(output_folder, "{}_cam_front.png".format(sample_token)), c1)
+        cv2.imwrite(os.path.join(output_folder, "{}_cam_front_zoomed.png".format(sample_token)), c2)
+        cv2.imwrite(os.path.join(output_folder, "{}_cam_front_right.png".format(sample_token)), c3)
+        cv2.imwrite(os.path.join(output_folder, "{}_cam_front_left.png".format(sample_token)), c4)
+        cv2.imwrite(os.path.join(output_folder, "{}_cam_back.png".format(sample_token)), c5)
+        cv2.imwrite(os.path.join(output_folder, "{}_cam_back_right.png".format(sample_token)), c6)
+        cv2.imwrite(os.path.join(output_folder, "{}_cam_back_left.png".format(sample_token)), c7)
         
         sample_token = sample["next"]
 
@@ -239,7 +262,7 @@ def bev_data_creation(config):
     sample_lidar_token = sample["data"]["LIDAR_TOP"]
     lidar_data = level5data.get("sample_data", sample_lidar_token)
     lidar_filepath = level5data.get_sample_data_path(sample_lidar_token)
-
+   
     ego_pose = level5data.get("ego_pose", lidar_data["ego_pose_token"])
     calibrated_sensor = level5data.get("calibrated_sensor", lidar_data["calibrated_sensor_token"])
 
@@ -254,7 +277,7 @@ def bev_data_creation(config):
     spec_lidar_path_1 = '/home/kishore/workspace/lidar_data/data/3d-object-detection-for-autonomous-vehicles/train_lidar/host-a011_lidar1_1233090652702363606.bin'
     if str(lidar_filepath) != spec_lidar_path_1:
         lidar_pointcloud = LidarPointCloud.from_file(lidar_filepath)
- 
+
 
     # The lidar pointcloud is defined in the sensor's reference frame.
     # We want it in the car's reference frame, so we transform each point
@@ -285,7 +308,7 @@ def bev_data_creation(config):
     # "bev" stands for birds eye view
     train_data_folder = config["train_data_folder"]
     validation_data_folder = config["validation_data_folder"]
-    NUM_WORKERS = 1
+    NUM_WORKERS = 10
     for df, data_folder in [(train_df, train_data_folder), (validation_df, validation_data_folder)]:
         print("Preparing data into {} using {} workers".format(data_folder, NUM_WORKERS))
         first_samples = df.first_sample_token.values
@@ -323,6 +346,8 @@ if __name__ == "__main__":
     config["validation_data_folder"] = os.path.join(config["artifacts"], "./bev_validation_data")
     config["voxel_size"] = voxel_size
     config["z_offset"] = z_offset
-    config["bev_shape"] = "./res"
+    config["bev_shape"] = bev_shape
+    config["box_scale"] = 0.8
+
 
     bev_data_creation(config)
