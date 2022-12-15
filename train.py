@@ -70,13 +70,27 @@ def plottable_prediction(prediction):
     prediction = prediction[0]
     prediction = scipy.special.softmax(prediction, axis=-1)
     prediction = np.repeat(prediction[:,:,0][..., None], 3, axis=2)
-    prediction = 1 - (prediction > 0.5)
+    prediction = prediction > 0.5
     print("Prediction:", prediction.shape)
     return prediction * 255.0
     
 
+def plot_images(images, scale_factor=2):
+    num_images = len(images)
+    num_cols = int(np.ceil(np.sqrt(num_images)))
+    num_rows = int(np.ceil(num_images / num_cols))
+    grid_shape = (num_rows, num_cols)
+    
+    figsize = (grid_shape[0] * scale_factor, grid_shape[1] * scale_factor)
+    _, axes = plt.subplots(grid_shape[0], grid_shape[1], figsize=figsize)
+      
+    for ax, image in zip(axes.flatten(), images):
+        ax.imshow(image)
+        ax.axis("off")
+    plt.show()
+  
 
-def plot_sample_outputs(net, dataset, val=False):
+def plot_sample_outputs(net, train_dataset, val_dataset, plot=False):
     """
     Takes random examples from the input tf.data instance and then plots the 
     generated output, corresponding inputs and ground truths.
@@ -91,27 +105,29 @@ def plot_sample_outputs(net, dataset, val=False):
         DESCRIPTION.
     """
     
-    plt.figure(figsize=(16,8))
-    
-    if val:
-        dataset = dataset.shuffle(buffer_size=100)
+    plt.figure(figsize=(16,16))
+    plt.axis('off')
+    plt.grid(b=None)
 
-    for data in dataset.take(1):
-        prediction = 1- plottable_prediction(net(data[0]).numpy())
-        plt.title(data[2].numpy()[0])
-        imgs = [data[0][0], data[1][0]]
-        image_list = [prediction]
-        for i, img in enumerate(imgs):
-            if i == 1:
-                img = np.repeat(img, 3, 2)
-                image_list.insert(1, img)
-            else:
-                image_list.insert(0, img)
-        for i, img in enumerate(image_list):
-            print(i, " min: ",np.min(img), " max: ", np.max(img), " mean ", np.mean(img))
-        h_stack = np.hstack(image_list)
-        plt.imshow(h_stack)
-        plt.show()
+    to_vstack = []
+    for dataset in [train_dataset, val_dataset]:
+        for data in dataset.take(1):
+            prediction = 1- plottable_prediction(net(data[0]).numpy())
+            plt.title(data[2].numpy()[0])
+            imgs = [data[0][0], data[1][0]]
+            image_list = [prediction]
+            for i, img in enumerate(imgs):
+                if i == 1:
+                    img = np.repeat(img, 3, 2)
+                    image_list.insert(1, img)
+                else:
+                    image_list.insert(0, img)
+            for i, img in enumerate(image_list):
+                print(i, " min: ",np.min(img), " max: ", np.max(img), " mean ", np.mean(img))
+            h_stack = np.hstack(image_list)
+            to_vstack.append(h_stack)
+    plt.imshow()
+    
         
 def train(train_dataset, val_dataset, epochs, model, optimizer, class_weights_dict):
     
@@ -127,7 +143,8 @@ def train(train_dataset, val_dataset, epochs, model, optimizer, class_weights_di
             count += 1
             if count % 500 == 0:    
                 print(" loss: ",loss.numpy())
-                plot_sample_outputs(model, train_dataset)
+                plot_sample_outputs(model, train_dataset, val_dataset)
+                
 
 
             # Compute gradients
@@ -147,7 +164,6 @@ def train(train_dataset, val_dataset, epochs, model, optimizer, class_weights_di
 if __name__ == "__main__":
     with open('parameters/train.yaml', 'r') as file:
         parameters = yaml.safe_load(file)
-
     # Creating/Loading TF Records data
     train_dataset, val_dataset = get_dataset(parameters)
     
@@ -170,4 +186,4 @@ if __name__ == "__main__":
         class_weight_dict[i] = class_weights[i]
     
     train(train_dataset, val_dataset, 10, net, optimizer, class_weight_dict)
-    net.save_weights("./res/custom_train.h5")
+    net.save("./res/custom_train.h5")
