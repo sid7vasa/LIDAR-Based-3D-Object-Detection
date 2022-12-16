@@ -10,6 +10,8 @@ images
 lidar
 maps
 notebooks/
+checkpoints
+res
 
 # C extensions
 *.so
