@@ -31,9 +31,9 @@ def preprocess_data(X1, X2, X3):
     Pre processing for the inputs and outputs.
     Parameters
     ----------
-    X1 : Input (satellite)
+    X1 : Input 
         DESCRIPTION.
-    X2 : Output (Maps)
+    X2 : Output
         DESCRIPTION.
     Returns
     -------
@@ -240,5 +240,6 @@ def load_tfrecords(parameters):
     val_dataset=val_dataset.map(parse_tfr_element)
     val_dataset=val_dataset.map(lambda x, y, z: (
         tf.cast(x, tf.float32), tf.cast(y, tf.int64), z))
+    val_dataset=val_dataset.map(preprocess_data)
 
     return (train_dataset, val_dataset)

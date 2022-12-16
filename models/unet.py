@@ -173,7 +173,7 @@ class Generator():
             DESCRIPTION.
         """
         # Down Path
-        inputs = Input(shape=self.input_shape)
+        inputs = Input(shape=self.input_shape) 
         e1 = ConvBNRelu(filters=64, batch_norm=False)(inputs) 
         e2 = ConvBNRelu(filters=128)(e1) 
         e3 = ConvBNRelu(filters=256)(e2) 
