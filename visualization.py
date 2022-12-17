@@ -8,6 +8,7 @@ from tqdm import tqdm
 import tensorflow as tf
 from train import plottable_prediction
 import matplotlib.pyplot as plt
+import scipy
 
 
 def write_video(filename, images):
@@ -34,6 +35,54 @@ def write_video(filename, images):
     
     # Release the video writer
     out.release()
+    
+def get_boxes(prediction_non_class0, prediction_conf):
+    detection_boxes = []
+    detection_scores = []
+    detection_classes = []
+    
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+    
+    prediction_opened = cv2.morphologyEx(prediction_non_class0, cv2.MORPH_OPEN, kernel).astype(np.uint8)
+    class_probability = prediction_conf
+
+    sample_boxes = []
+    sample_detection_scores = []
+    sample_detection_classes = []
+    
+    contours, hierarchy = cv2.findContours(prediction_opened, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+    
+    
+    classes = ["car", "motorcycle", "bus", "bicycle", "truck", "pedestrian", "other_vehicle", "animal", "emergency_vehicle"]
+    
+    for cnt in contours:
+        rect = cv2.minAreaRect(cnt)
+        box = cv2.boxPoints(rect)
+        
+        # Let's take the center pixel value as the confidence value
+        box_center_index = np.int0(np.mean(box, axis=0))
+        
+        for class_index in range(len(classes)):
+            box_center_value = class_probability[box_center_index[1], box_center_index[0], class_index+1]
+            
+            # Let's remove candidates with very low probability
+            if box_center_value < 0.01:
+                continue
+            
+            box_center_class = classes[class_index]
+
+            box_detection_score = box_center_value
+            sample_detection_classes.append(box_center_class)
+            sample_detection_scores.append(box_detection_score)
+            sample_boxes.append(box)
+        
+    
+    detection_boxes.append(np.array(sample_boxes))
+    detection_scores.append(sample_detection_scores)
+    detection_classes.append(sample_detection_classes)   
+    
+    return detection_boxes, detection_scores, detection_classes, prediction_opened
+
 
 def inference(model, image_paths, video=False, filename="inference.avi"):
     """
@@ -49,7 +98,7 @@ def inference(model, image_paths, video=False, filename="inference.avi"):
         Defaults to "inference.avi".
         
     """
-    out_list = []
+
     for image_path in image_paths:
         # Read in the image and convert it to RGB format
         image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
@@ -64,23 +113,29 @@ def inference(model, image_paths, video=False, filename="inference.avi"):
         
 
         # Process the prediction to make it more suitable for plotting
-        prediction = plottable_prediction(prediction)
+        prediction, prediction_conf = plottable_prediction(prediction, confidence=True)
+        prediction = prediction[:,:,0]
         
-        # Create an overlay by blending the prediction with the original image
-        overlay = prediction * 0.8 + 1.0 * image[0]
+        detection_boxes, detection_scores, detection_classes, prediction_opened = get_boxes(prediction, prediction_conf)
         
-        # Add the overlay to the list of outputs
-        out_list.append(np.clip(overlay.numpy(), 0.0, 255.0))
+        t = np.zeros_like(prediction_opened)
+        box_pix = np.int0(detection_boxes[0])
         
-        # Display the overlay using Matplotlib
-        plt.imshow(overlay)
-        plt.grid(False)
-        plt.axis('off')
+        plt_image = (image[0,:,:,:] * 255.0).numpy()
+        plt_image[:,:,2] = plt_image[:,:,2] * 0.1
+        cv2.drawContours(t,box_pix,-1,(255,255,255),1)
+
+        t = plt_image + np.repeat(t[..., None], 3, axis=2) 
+        t = np.clip(t, 0, 255)
+        plt.imshow(t)
         plt.show()
         
-    # If the video argument is True, write a video using the list of outputs and the specified filename
-    if video:
-        write_video(filename, out_list)
+        # plt.hist(detection_scores[0], bins=20)
+        # plt.xlabel("Detection Score")
+        # plt.ylabel("Count")
+        # plt.show()
+                
+        
 
 if __name__ == "__main__":
     
@@ -101,7 +156,7 @@ if __name__ == "__main__":
     
     # np.save("lidar_inputs.npy",np.array(files), allow_pickle=True)
     
-    files = list(np.load("lidar_inputs.npy", allow_pickle=True))
+    files = list(np.load("./playground/lidar_inputs.npy", allow_pickle=True))[50:]
     inference(net, files, video=False)
     
     # image_list = []

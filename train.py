@@ -54,7 +54,7 @@ def get_dataset(parameters):
     return train_dataset, val_dataset
 
 
-def plottable_prediction(prediction):
+def plottable_prediction(prediction, confidence=False):
     """
     Process a model prediction to make it more suitable for plotting.
     
@@ -70,13 +70,16 @@ def plottable_prediction(prediction):
     prediction = prediction[0]
     
     # Applying softmax on classes of the prediction
-    prediction = scipy.special.softmax(prediction, axis=-1)
+    prediction_conf = scipy.special.softmax(prediction, axis=-1)
     
     # Takes the foreground class and converts the prediction array to 3 channels. 
-    prediction = np.repeat(prediction[:,:,1][..., None], 3, axis=2)
+    prediction = np.repeat(prediction_conf[:,:,1][..., None], 3, axis=2)
     
     # Threshold the prediction for binary image and rescale.
     prediction = (prediction > 0.5) * 255.0
+    
+    if confidence:
+        return prediction, prediction_conf
     
     return prediction 
     

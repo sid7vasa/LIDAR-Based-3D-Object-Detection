@@ -7,7 +7,7 @@ Class: CS 7180 - Advanced Perception
 - Windows Sub-system for Linux - Windows 11. For training and development.
 
 ### Link to the report
-https://www.overleaf.com/project/6272ff260322860726c3fa3b
+https://www.overleaf.com/read/qwghjktbxxwv
 
 ### How to run?
 - Install requirements.txt <br> 
@@ -33,12 +33,15 @@ Areas where the network does not work well:
 - Objects detected farther from the ego's position.
 
 ### Example Inputs: BEV view afterlidar data projection<br>
-![image info](BEV_INPUT.gif)
+![image info](./res/BEV_INPUT.gif)
 
 <br>
 <br> 
 
 ### Outputs: In the order of (input, target and prediction)
-![image info](out1.jpg)
-![image info](out2.jpg)
+![image info](./res/out1.jpg)
+![image info](./res/out2.jpg)
+
+### Post Processing:
+![image info](./res/boxes.png)
 
